@@ -29,9 +29,10 @@ class CalibrateWithHand(Calibrate):
         hand_finder = HandFinder()
         joints = hand_finder.get_hand_joints()
         mapping = hand_finder.get_hand_parameters().mapping
-        for hand in mapping:
-            prefix = mapping[hand]
-            for joint in joints[prefix]:
+        print joints
+        print mapping
+        for hand_serial in joints:
+            for joint in joints[hand_serial]:
                 if joint[3:5].lower() == 'th' or joint[3:5].lower() == 'wr' or (joint[6] != '1' and joint[6] != '2'):
                     joint_controller = 'cal_sh_' + joint.lower()
                 else:
@@ -39,6 +40,7 @@ class CalibrateWithHand(Calibrate):
                     joint_controller = 'cal_sh_' + joint.lower()
                 if joint_controller not in controllers:
                     controllers.append(joint_controller)
+        print controllers
         return controllers
 
 

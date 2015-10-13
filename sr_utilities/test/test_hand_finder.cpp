@@ -34,7 +34,8 @@ TEST(SrHandFinder, hand_absent_test)
 TEST(SrHandFinder, hand_present_test)
 {
   ros::NodeHandle nh;
-  nh.setParam("hand/mapping/1", "rh");
+  nh.setParam("hand/config_dir/1", "rh_motor");
+  nh.setParam("hand/mapping/1", "right");
   nh.setParam("hand/joint_prefix/1", "rh_");
   const string joint_names[] = {"FFJ1", "FFJ2", "FFJ3", "FFJ4", "MFJ1", "MFJ2", "MFJ3", "MFJ4",
                                 "RFJ1", "RFJ2", "RFJ3", "RFJ4", "LFJ1", "LFJ2", "LFJ3", "LFJ4", "LFJ5",
@@ -54,7 +55,7 @@ TEST(SrHandFinder, hand_present_test)
   for (map<string, string>::const_iterator iter = calibration_path.begin(); iter != calibration_path.end(); ++iter)
   {
     ROS_INFO_STREAM(iter->second);
-    ASSERT_STREQ(iter->second.c_str(), (ethercat_path + "/calibrations/rh/" + "calibration.yaml").c_str());
+    ASSERT_STREQ(iter->second.c_str(), (ethercat_path + "/calibrations/rh_motor/" + "calibration.yaml").c_str());
   }
   shadow_robot::HandControllerTuning controller_tuning(hand_finder.get_hand_controller_tuning());
   for (map<string, string>::const_iterator iter = controller_tuning.friction_compensation_.begin();
@@ -67,7 +68,7 @@ TEST(SrHandFinder, hand_present_test)
        iter != controller_tuning.motor_control_.end(); ++iter)
   {
     ASSERT_STREQ(iter->second.c_str(),
-                 (ethercat_path + "/controls/motors/rh/motor_board_effort_controllers.yaml").c_str());
+                 (ethercat_path + "/controls/motors/rh_motor/motor_board_effort_controllers.yaml").c_str());
     ROS_DEBUG_STREAM(iter->second);
   }
   for (map<string, vector<string> >::const_iterator iter = controller_tuning.host_control_.begin();
@@ -86,11 +87,12 @@ TEST(SrHandFinder, hand_present_test)
     ASSERT_EQ(host_controller_files.size(), iter->second.size());
     for (size_t i = 0; i != iter->second.size(); ++i)
     {
-      ASSERT_STREQ(iter->second[i].c_str(), (ethercat_path + "/controls/host/rh/" + host_controller_files[i]).c_str());
+      ASSERT_STREQ(iter->second[i].c_str(), (ethercat_path + "/controls/host/rh_motor/" + host_controller_files[i]).c_str());
       ROS_DEBUG_STREAM(iter->second[i]);
     }
   }
   nh.deleteParam("hand/mapping/1");
+  nh.deleteParam("hand/config_dir/1");
   nh.deleteParam("hand/joint_prefix/1");
   ASSERT_TRUE(true);
 }

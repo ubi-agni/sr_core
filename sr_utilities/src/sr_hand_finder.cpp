@@ -39,14 +39,14 @@ namespace shadow_robot
 
   SrHandFinder::SrHandFinder()
   {
-    map<string, string> mapping_map;
+    ros::param::get("hand/config_dir", hand_config_.config_dir_);
     ros::param::get("hand/mapping", hand_config_.mapping_);
     ros::param::get("hand/joint_prefix", hand_config_.joint_prefix_);
 
     for (map<string, string>::const_iterator iter = hand_config_.mapping_.begin();
          iter != hand_config_.mapping_.end(); ++iter)
     {
-      ROS_INFO_STREAM("detected hands are \n" << "hand serial:" << iter->first << " hand_id:" << iter->second);
+      ROS_INFO_STREAM("detected hands are \n" << "hand serial:" << iter->first << " hand_namespace:" << iter->second);
     }
     generate_joints_with_prefix();
     generate_calibration_path();
@@ -58,10 +58,10 @@ namespace shadow_robot
     for (map<string, string>::const_iterator prefix_iter = hand_config_.joint_prefix_.begin();
          prefix_iter != hand_config_.joint_prefix_.end(); ++prefix_iter)
     {
-      joints_[prefix_iter->second].resize(number_of_joints_);
+      joints_[prefix_iter->first].resize(number_of_joints_);
       for (size_t joint_counter = 0; joint_counter != number_of_joints_; ++joint_counter)
       {
-        joints_[prefix_iter->second][joint_counter] = prefix_iter->second + joint_names_[joint_counter];
+        joints_[prefix_iter->first][joint_counter] = prefix_iter->second + joint_names_[joint_counter];
       }
     }
   }
@@ -69,43 +69,43 @@ namespace shadow_robot
   void SrHandFinder::generate_calibration_path()
   {
     string ethercat_path = ros::package::getPath("sr_ethercat_hand_config");
-    for (map<string, string>::const_iterator mapping_iter = hand_config_.mapping_.begin();
-         mapping_iter != hand_config_.mapping_.end(); ++mapping_iter)
+    for (map<string, string>::const_iterator config_dir_iter = hand_config_.config_dir_.begin();
+         config_dir_iter != hand_config_.config_dir_.end(); ++config_dir_iter)
     {
-      calibration_path_[mapping_iter->second] = ethercat_path + "/calibrations/"
-                                                + mapping_iter->second + "/" + "calibration.yaml";
+      calibration_path_[config_dir_iter->first] = ethercat_path + "/calibrations/"
+                                                + config_dir_iter->second + "/" + "calibration.yaml";
     }
   }
 
   void SrHandFinder::generate_hand_controller_tuning_path()
   {
     string ethercat_path = ros::package::getPath("sr_ethercat_hand_config");
-    for (map<string, string>::const_iterator mapping_iter = hand_config_.mapping_.begin();
-         mapping_iter != hand_config_.mapping_.end(); ++mapping_iter)
+    for (map<string, string>::const_iterator config_dir_iter = hand_config_.config_dir_.begin();
+         config_dir_iter != hand_config_.config_dir_.end(); ++config_dir_iter)
     {
-      hand_controller_tuning_.friction_compensation_[mapping_iter->second] =
+      hand_controller_tuning_.friction_compensation_[config_dir_iter->first] =
               ethercat_path + "/controls/" + "friction_compensation.yaml";
-      hand_controller_tuning_.motor_control_[mapping_iter->second] =
-              ethercat_path + "/controls/motors/" + mapping_iter->second + "/motor_board_effort_controllers.yaml";
-      string host_path(ethercat_path + "/controls/host/" + mapping_iter->second + "/");
-      hand_controller_tuning_.host_control_[mapping_iter->second].push_back(
+      hand_controller_tuning_.motor_control_[config_dir_iter->first] =
+              ethercat_path + "/controls/motors/" + config_dir_iter->second + "/motor_board_effort_controllers.yaml";
+      string host_path(ethercat_path + "/controls/host/" + config_dir_iter->second + "/");
+      hand_controller_tuning_.host_control_[config_dir_iter->first].push_back(
               host_path + "sr_edc_calibration_controllers.yaml");
-      hand_controller_tuning_.host_control_[mapping_iter->second].push_back(
+      hand_controller_tuning_.host_control_[config_dir_iter->first].push_back(
               host_path + "sr_edc_joint_velocity_controllers_PWM.yaml");
-      hand_controller_tuning_.host_control_[mapping_iter->second].push_back(
+      hand_controller_tuning_.host_control_[config_dir_iter->first].push_back(
               host_path + "sr_edc_effort_controllers_PWM.yaml");
-      hand_controller_tuning_.host_control_[mapping_iter->second].push_back(
+      hand_controller_tuning_.host_control_[config_dir_iter->first].push_back(
               host_path + "sr_edc_joint_velocity_controllers.yaml");
-      hand_controller_tuning_.host_control_[mapping_iter->second].push_back(
+      hand_controller_tuning_.host_control_[config_dir_iter->first].push_back(
               host_path + "sr_edc_effort_controllers.yaml");
 
-      hand_controller_tuning_.host_control_[mapping_iter->second].push_back(
+      hand_controller_tuning_.host_control_[config_dir_iter->first].push_back(
               host_path + "sr_edc_mixed_position_velocity_joint_controllers_PWM.yaml");
-      hand_controller_tuning_.host_control_[mapping_iter->second].push_back(
+      hand_controller_tuning_.host_control_[config_dir_iter->first].push_back(
               host_path + "sr_edc_joint_position_controllers_PWM.yaml");
-      hand_controller_tuning_.host_control_[mapping_iter->second].push_back(
+      hand_controller_tuning_.host_control_[config_dir_iter->first].push_back(
               host_path + "sr_edc_mixed_position_velocity_joint_controllers.yaml");
-      hand_controller_tuning_.host_control_[mapping_iter->second].push_back(
+      hand_controller_tuning_.host_control_[config_dir_iter->first].push_back(
               host_path + "sr_edc_joint_position_controllers.yaml");
     }
   }

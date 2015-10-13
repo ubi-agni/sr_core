@@ -21,7 +21,7 @@ from local_urdf_parser_py import URDF
 
 
 class HandControllerTuning(object):
-    def __init__(self, mapping):
+    def __init__(self, config_dir):
         """
 
         """
@@ -30,11 +30,11 @@ class HandControllerTuning(object):
         self.friction_compensation = {}
         self.host_control = {}
         self.motor_control = {}
-        for hand in mapping:
-            self.friction_compensation[mapping[hand]] = \
+        for hand_serial in config_dir:
+            self.friction_compensation[config_dir[hand_serial]] = \
                 ethercat_path + '/controls/' + 'friction_compensation.yaml'
-            host_path = ethercat_path + '/controls/host/' + mapping[hand] + '/'
-            self.host_control[mapping[hand]] = \
+            host_path = ethercat_path + '/controls/host/' + config_dir[hand_serial] + '/'
+            self.host_control[hand_serial] = \
                 [host_path + 'sr_edc_calibration_controllers.yaml',
                  host_path + 'sr_edc_joint_velocity_controllers_PWM.yaml',
                  host_path + 'sr_edc_effort_controllers_PWM.yaml',
@@ -47,37 +47,38 @@ class HandControllerTuning(object):
                              'joint_controllers.yaml',
                  host_path + 'sr_edc_joint_position_controllers.yaml']
 
-            self.motor_control[mapping[hand]] = \
+            self.motor_control[hand_serial] = \
                 ethercat_path + '/controls/motors/' +\
-                mapping[hand] + '/motor_board_effort_controllers.yaml'
+                config_dir[hand_serial] + '/motor_board_effort_controllers.yaml'
 
 
 class HandCalibration(object):
-    def __init__(self, mapping):
+    def __init__(self, config_dir):
         """
 
         """
         ros_pack = rospkg.RosPack()
         ethercat_path = ros_pack.get_path('sr_ethercat_hand_config')
         self.calibration_path = {}
-        for hand in mapping:
-            self.calibration_path[mapping[hand]] = \
-                ethercat_path + '/calibrations/' + mapping[hand] + '/' \
+        for hand_serial in config_dir:
+            self.calibration_path[hand_serial] = \
+                ethercat_path + '/calibrations/' + config_dir[hand_serial] + '/' \
                 + "calibration.yaml"
 
 
 class HandConfig(object):
 
-    def __init__(self, mapping, joint_prefix):
+    def __init__(self, config_dir, mapping, joint_prefix):
         """
 
         """
+        self.config_dir = config_dir
         self.mapping = mapping
         self.joint_prefix = joint_prefix
 
 
 class HandJoints(object):
-    def __init__(self, mapping):
+    def __init__(self, joint_prefix):
         """
 
         """
@@ -89,33 +90,33 @@ class HandJoints(object):
                   'LFJ3', 'LFJ4', 'LFJ5', 'THJ1', 'THJ2', 'THJ3', 'THJ4',
                   'THJ5', 'WRJ1', 'WRJ2']
 
-        for hand in mapping:
+        for hand_serial in joint_prefix:
             for joint in joints:
-                hand_joints.append(mapping[hand] + '_' + joint)
-
+                hand_joints.append(joint_prefix[hand_serial] + joint)
         if rospy.has_param('robot_description'):
             robot_description = rospy.get_param('robot_description')
             hand_urdf = URDF.from_xml_string(robot_description)
-            for hand in mapping:
+            for hand_serial in joint_prefix:
                 joints_tmp = []
-                self.joints[mapping[hand]] = []
+                self.joints[hand_serial] = []
                 for joint in hand_urdf.joints:
                     if joint.type != 'fixed':
-                        joint_prefix = joint.name[:2]
-                        if joint_prefix not in mapping.values():
+                        #TODO:use a split at _, why whould a prefix be of size two
+                        prefix = joint.name[:2] + "_"
+                        if prefix not in joint_prefix.values():
                             rospy.logdebug("joint " + joint.name + "has invalid "
                                            "prefix")
-                        elif joint_prefix == mapping[hand]:
+                        elif prefix == joint_prefix[hand_serial]:
                             joints_tmp.append(joint.name)
                 for joint_unordered in hand_joints:
                     if joint_unordered in joints_tmp:
-                        self.joints[mapping[hand]].append(joint_unordered)
+                        self.joints[hand_serial].append(joint_unordered)
 
         else:
             rospy.logwarn("No robot_description found on parameter server."
                           "Joint names are loaded for 5 finger hand")
-
-            self.joints[mapping[hand]] = hand_joints
+            if len(joint_prefix) > 0:
+                self.joints[hand_serial] = hand_joints
 
 
 class HandFinder(object):
@@ -129,18 +130,20 @@ class HandFinder(object):
         """
         Parses the parameter server to extract the necessary information.
         """
-        if not rospy.has_param("hand"):
+        if not rospy.has_param("/hand"):
             rospy.logerr("No hand is detected")
-            hand_parameters = {'joint_prefix': {}, 'mapping': {}}
+            hand_parameters = {'joint_prefix': {}, 'mapping': {}, 'config_dir': {}}
         else:
-            hand_parameters = rospy.get_param("hand")
-        self.hand_config = HandConfig(hand_parameters["mapping"],
+            # hand param is always at root (shared between hands)
+            hand_parameters = rospy.get_param("/hand")
+        self.hand_config = HandConfig(hand_parameters["config_dir"],
+                                      hand_parameters["mapping"],
                                       hand_parameters["joint_prefix"])
-        self.hand_joints = HandJoints(self.hand_config.mapping).joints
+        self.hand_joints = HandJoints(self.hand_config.joint_prefix).joints
         self.calibration_path = \
-            HandCalibration(self.hand_config.mapping).calibration_path
+            HandCalibration(self.hand_config.config_dir).calibration_path
         self.hand_control_tuning = \
-            HandControllerTuning(self.hand_config.mapping)
+            HandControllerTuning(self.hand_config.config_dir)
 
     def get_calibration_path(self):
         return self.calibration_path

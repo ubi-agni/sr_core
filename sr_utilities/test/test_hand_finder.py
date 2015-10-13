@@ -8,8 +8,8 @@ from sr_utilities.hand_finder import HandFinder
 
 class TestHandFinder(unittest.TestCase):
     def test_no_hand_finder(self):
-        if rospy.has_param("hand"):
-            rospy.delete_param("hand")
+        if rospy.has_param("/hand"):
+            rospy.delete_param("/hand")
 
         hand_finder = HandFinder()
 
@@ -32,8 +32,9 @@ class TestHandFinder(unittest.TestCase):
                          "correct tuning without a hands")
 
     def test_one_hand_finder(self):
+        rospy.set_param("hand/config_dir/1", "rh_motor")
         rospy.set_param("hand/joint_prefix/1", "rh_")
-        rospy.set_param("hand/mapping/1", "rh")
+        rospy.set_param("hand/mapping/1", "right")
 
         hand_finder = HandFinder()
         self.assertIsNotNone(hand_finder.get_hand_parameters(),
@@ -46,10 +47,12 @@ class TestHandFinder(unittest.TestCase):
                              "Control tuning parameters extracted.")
 
     def test_two_hand_finder(self):
+        rospy.set_param("hand/config_dir/1", "rh_motor")
         rospy.set_param("hand/joint_prefix/1", "rh_")
-        rospy.set_param("hand/mapping/1", "rh")
+        rospy.set_param("hand/mapping/1", "right")
+        rospy.set_param("hand/config_dir/2", "lh_motor")
         rospy.set_param("hand/joint_prefix/2", "lh_")
-        rospy.set_param("hand/mapping/2", "lh")
+        rospy.set_param("hand/mapping/2", "left")
 
         hand_finder = HandFinder()
         self.assertIsNotNone(hand_finder.get_hand_parameters(),

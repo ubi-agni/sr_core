@@ -32,6 +32,7 @@ namespace shadow_robot
   struct HandConfig
   {
     std::map<std::string, std::string> mapping_;
+    std::map<std::string, std::string> config_dir_;
     std::map<std::string, std::string> joint_prefix_;
   };
 

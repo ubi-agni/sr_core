@@ -31,27 +31,28 @@ class TrajectoryControllerSpawner(object):
         self.joints = self.hand_finder.get_hand_joints()
         ros_pack = rospkg.RosPack()
         sr_robot_launch_path = ros_pack.get_path('sr_robot_launch')
-        self.hand_mapping = self.hand_finder.get_hand_parameters().mapping
+        self.hand_namespace = self.hand_finder.get_hand_parameters().mapping
+        self.config_dir = self.hand_finder.get_hand_parameters().config_dir
         self.yaml_file_path = {}
-        for hand in self.hand_mapping:
-            self.yaml_file_path[self.hand_mapping[hand]] = (
-                sr_robot_launch_path + "/config/" + self.hand_mapping[hand] + "_trajectory_controller.yaml")
+        for hand_serial in self.config_dir:
+            self.yaml_file_path[hand_serial] = (
+                sr_robot_launch_path + "/config/" + self.config_dir[hand_serial] + "_trajectory_controller.yaml")
 
     def generate_parameters(self):
-        for hand in self.yaml_file_path:
-            with open(self.yaml_file_path[hand], 'r') as yaml_file:
+        for hand_serial in self.yaml_file_path:
+            with open(self.yaml_file_path[hand_serial], 'r') as yaml_file:
                 yaml_content = yaml.load(yaml_file)
-            if hand + "_trajectory_controller" not in yaml_content.keys():
+            if hand_namespace[hand_serial] + "_trajectory_controller" not in yaml_content.keys():
                 rospy.logerr("there are errors openning trajectory controller yaml file")
             else:
-                hand_trajectory = yaml_content[hand + "_trajectory_controller"]
-                hand_trajectory['joints'] = self.joints[hand]
+                hand_trajectory = yaml_content[self.hand_namespace[hand_serial] + "_trajectory_controller"]
+                hand_trajectory['joints'] = self.joints[hand_serial]
                 for joint_name in hand_trajectory['constraints'].keys():
                     if (joint_name not in hand_trajectory['joints'] and
                             joint_name != 'goal_time' and joint_name != 'stopped_velocity_tolerance'):
                         del hand_trajectory['constraints'][joint_name]
 
-                param_prefix = hand + "_trajectory_controller/"
+                param_prefix = self.hand_namespace[hand_serial] + "_trajectory_controller/"
                 rospy.set_param(param_prefix + 'allow_partial_joints_goal',
                                 hand_trajectory['allow_partial_joints_goal'])
                 rospy.set_param(param_prefix + 'joints', hand_trajectory['joints'])
@@ -82,8 +83,8 @@ class TrajectoryControllerSpawner(object):
 
     def set_controller(self):
         controllers_to_start = []
-        for hand_serial in self.hand_mapping:
-            hand_prefix = self.hand_mapping[hand_serial]
+        for hand_serial in self.hand_namespace:
+            hand_prefix = self.hand_namespace[hand_serial]
             success = True
             try:
                 rospy.wait_for_service('controller_manager/list_controllers', WAIT_TIME)
@@ -106,7 +107,7 @@ class TrajectoryControllerSpawner(object):
                 no_wrist = False
                 if rospy.has_param('~exclude_wrist') and rospy.get_param('~exclude_wrist'):
                     no_wrist = True
-                for joint in self.joints[hand_prefix]:
+                for joint in self.joints[hand_serial]:
                     TrajectoryControllerSpawner.check_joint(joint, controllers_to_start, controller_names, no_wrist)
 
         for load_control in controllers_to_start:
