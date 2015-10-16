@@ -31,7 +31,7 @@ class HandControllerTuning(object):
         self.host_control = {}
         self.motor_control = {}
         for hand_serial in config_dir:
-            self.friction_compensation[config_dir[hand_serial]] = \
+            self.friction_compensation[hand_serial] = \
                 ethercat_path + '/controls/' + 'friction_compensation.yaml'
             host_path = ethercat_path + '/controls/host/' + config_dir[hand_serial] + '/'
             self.host_control[hand_serial] = \
@@ -90,11 +90,17 @@ class HandJoints(object):
                   'LFJ3', 'LFJ4', 'LFJ5', 'THJ1', 'THJ2', 'THJ3', 'THJ4',
                   'THJ5', 'WRJ1', 'WRJ2']
 
-        for hand_serial in joint_prefix:
-            for joint in joints:
-                hand_joints.append(joint_prefix[hand_serial] + joint)
+       
+        
         if rospy.has_param('robot_description'):
             robot_description = rospy.get_param('robot_description')
+            
+            # concatenate all the joints with prefixes
+            for hand_serial in joint_prefix:
+                for joint in joints:
+                    hand_joints.append(joint_prefix[hand_serial] + joint)
+                    
+            # add the prefixed joints to each hand but remove fixed joints
             hand_urdf = URDF.from_xml_string(robot_description)
             for hand_serial in joint_prefix:
                 joints_tmp = []
@@ -116,7 +122,12 @@ class HandJoints(object):
             rospy.logwarn("No robot_description found on parameter server."
                           "Joint names are loaded for 5 finger hand")
             if len(joint_prefix) > 0:
-                self.joints[hand_serial] = hand_joints
+                # concatenate all the joints with prefixes
+                for hand_serial in joint_prefix:
+                    hand_joints = []
+                    for joint in joints:
+                        hand_joints.append(joint_prefix[hand_serial] + joint)
+                    self.joints[hand_serial] = hand_joints
 
 
 class HandFinder(object):
