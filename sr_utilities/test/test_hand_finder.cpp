@@ -301,8 +301,8 @@ TEST(SrHandFinder, dual_hand_present_test)
                                 "RFJ1", "RFJ2", "RFJ3", "RFJ4", "LFJ1", "LFJ2", "LFJ3", "LFJ4", "LFJ5",
                                 "THJ1", "THJ2", "THJ3", "THJ4", "THJ5", "WRJ1", "WRJ2"};
   unsigned idx = 0;
-  const string prefix[] =  {"rh_", "lh_"};
-  const string dir[] =  {"right", "left"};
+  const string prefix[] =  {"lh_", "rh_"};
+  const string dir[] =  {"left", "right"};
   shadow_robot::SrHandFinder hand_finder;
   map<string, vector<string> > hand_joints(hand_finder.get_joints());
   
@@ -311,7 +311,7 @@ TEST(SrHandFinder, dual_hand_present_test)
   {
     for (size_t i = 0; i != iter->second.size(); ++i)
     {
-      ROS_DEBUG_STREAM(iter->second[i]);
+      ROS_DEBUG_STREAM(iter->first << ":" << iter->second[i]);
       ASSERT_STREQ(iter->second[i].c_str(), (prefix[idx] + joint_names[i]).c_str());
     }
     idx++;

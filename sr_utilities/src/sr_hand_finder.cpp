@@ -58,11 +58,20 @@ namespace shadow_robot
     for (map<string, string>::const_iterator prefix_iter = hand_config_.joint_prefix_.begin();
          prefix_iter != hand_config_.joint_prefix_.end(); ++prefix_iter)
     {
-      joints_[prefix_iter->second].resize(number_of_joints_);
-      for (size_t joint_counter = 0; joint_counter != number_of_joints_; ++joint_counter)
+      map<string, string>::const_iterator mapping_iter = hand_config_.mapping_.find(prefix_iter->first);
+      if (mapping_iter != hand_config_.mapping_.end() )
       {
-        joints_[prefix_iter->second][joint_counter] = prefix_iter->second + joint_names_[joint_counter];
+        joints_[mapping_iter->second].resize(number_of_joints_);
+        for (size_t joint_counter = 0; joint_counter != number_of_joints_; ++joint_counter)
+        {
+          joints_[mapping_iter->second][joint_counter] = prefix_iter->second + joint_names_[joint_counter];
+        }
       }
+      else
+      {
+        ROS_WARN_STREAM("serial " << prefix_iter->first << " of joint_prefix does not match any serial in hand_id.");
+      }
+      
     }
   }
 
