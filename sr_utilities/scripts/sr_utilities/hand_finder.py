@@ -33,7 +33,8 @@ class HandControllerTuning(object):
         for hand_serial in config_dir:
             self.friction_compensation[hand_serial] = \
                 ethercat_path + '/controls/' + 'friction_compensation.yaml'
-            host_path = ethercat_path + '/controls/host/' + config_dir[hand_serial] + '/'
+            host_path = ethercat_path + '/controls/host/' +\
+                config_dir[hand_serial] + '/'
             self.host_control[hand_serial] = \
                 [host_path + 'sr_edc_calibration_controllers.yaml',
                  host_path + 'sr_edc_joint_velocity_controllers_PWM.yaml',
@@ -49,7 +50,8 @@ class HandControllerTuning(object):
 
             self.motor_control[hand_serial] = \
                 ethercat_path + '/controls/motors/' +\
-                config_dir[hand_serial] + '/motor_board_effort_controllers.yaml'
+                config_dir[hand_serial] +\
+                '/motor_board_effort_controllers.yaml'
 
 
 class HandCalibration(object):
@@ -62,8 +64,9 @@ class HandCalibration(object):
         self.calibration_path = {}
         for hand_serial in config_dir:
             self.calibration_path[hand_serial] = \
-                ethercat_path + '/calibrations/' + config_dir[hand_serial] + '/' \
-                + "calibration.yaml"
+                ethercat_path + '/calibrations/' +\
+                config_dir[hand_serial] + '/' +\
+                "calibration.yaml"
 
 
 class HandConfig(object):
@@ -90,16 +93,14 @@ class HandJoints(object):
                   'LFJ3', 'LFJ4', 'LFJ5', 'THJ1', 'THJ2', 'THJ3', 'THJ4',
                   'THJ5', 'WRJ1', 'WRJ2']
 
-       
-        
         if rospy.has_param('robot_description'):
             robot_description = rospy.get_param('robot_description')
-            
+
             # concatenate all the joints with prefixes
             for hand_serial in joint_prefix:
                 for joint in joints:
                     hand_joints.append(joint_prefix[hand_serial] + joint)
-                    
+
             # add the prefixed joints to each hand but remove fixed joints
             hand_urdf = URDF.from_xml_string(robot_description)
             for hand_serial in joint_prefix:
@@ -107,11 +108,11 @@ class HandJoints(object):
                 self.joints[hand_serial] = []
                 for joint in hand_urdf.joints:
                     if joint.type != 'fixed':
-                        #TODO:use a split at _, why whould a prefix be of size two
+                        #TODO:split at _, why whould a prefix be of size two
                         prefix = joint.name[:2] + "_"
                         if prefix not in joint_prefix.values():
-                            rospy.logdebug("joint " + joint.name + "has invalid "
-                                           "prefix")
+                            rospy.logdebug("joint " + joint.name +
+                                           "has invalid prefix")
                         elif prefix == joint_prefix[hand_serial]:
                             joints_tmp.append(joint.name)
                 for joint_unordered in hand_joints:
@@ -143,7 +144,8 @@ class HandFinder(object):
         """
         if not rospy.has_param("/hand"):
             rospy.logerr("No hand is detected")
-            hand_parameters = {'joint_prefix': {}, 'mapping': {}, 'config_dir': {}}
+            hand_parameters = {'joint_prefix': {}, 'mapping': {},
+                               'config_dir': {}}
         else:
             # hand param is always at root (shared between hands)
             hand_parameters = rospy.get_param("/hand")
