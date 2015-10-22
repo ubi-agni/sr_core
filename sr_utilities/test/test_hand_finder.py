@@ -1,12 +1,26 @@
 #!/usr/bin/env python
 
-import rospy
+import rospy, rospkg
 import rostest
 import unittest
 from sr_utilities.hand_finder import HandFinder
-
+joint_names = ["FFJ1", "FFJ2", "FFJ3", "FFJ4", "MFJ1", "MFJ2", "MFJ3", "MFJ4",
+                                "RFJ1", "RFJ2", "RFJ3", "RFJ4", "LFJ1", "LFJ2", "LFJ3", "LFJ4", "LFJ5",
+                                "THJ1", "THJ2", "THJ3", "THJ4", "THJ5", "WRJ1", "WRJ2"]
+controller_params = ["sr_edc_calibration_controllers.yaml",
+                           "sr_edc_joint_velocity_controllers_PWM.yaml",
+                           "sr_edc_effort_controllers_PWM.yaml",
+                           "sr_edc_joint_velocity_controllers.yaml",
+                           "sr_edc_effort_controllers.yaml",
+                           "sr_edc_mixed_position_velocity_joint_controllers_PWM.yaml",
+                           "sr_edc_joint_position_controllers_PWM.yaml",
+                           "sr_edc_mixed_position_velocity_joint_controllers.yaml",
+                           "sr_edc_joint_position_controllers.yaml"]
 
 class TestHandFinder(unittest.TestCase):
+    rospack = rospkg.RosPack()
+    ethercat_path = rospack.get_path('sr_ethercat_hand_config')
+    
     def test_no_hand_finder(self):
         if rospy.has_param("hand"):
             rospy.delete_param("hand")
@@ -30,9 +44,73 @@ class TestHandFinder(unittest.TestCase):
         self.assertEqual(len(hand_finder.get_hand_control_tuning().
                              motor_control), 0,
                          "correct tuning without a hands")
+                         
 
     def test_one_hand_finder(self):
         rospy.set_param("hand/joint_prefix/1", "rh_")
+        rospy.set_param("hand/mapping/1", "right")
+
+        hand_finder = HandFinder()
+        self.assertIsNotNone(hand_finder.get_hand_parameters(),
+                             "Parameters extracted.")
+        self.assertIsNotNone(hand_finder.get_hand_joints(),
+                             "Joints extracted.")
+        joints = hand_finder.get_hand_joints()['right']
+        self.assertEqual(len(joints), 24, "incorrect number of joints")
+        self.assertEqual(joints[0], ("rh_" + joint_names[0]),"incorrect joint_name")
+        self.assertIsNotNone(hand_finder.get_calibration_path(),
+                             "Calibration extracted.")
+        calibration_path = hand_finder.get_calibration_path()['right']
+        self.assertEqual(calibration_path, self.ethercat_path + "/calibrations/right/" + "calibration.yaml","incorrect calibration file")
+        self.assertIsNotNone(hand_finder.get_hand_control_tuning(),
+                             "Control tuning parameters extracted.")
+        ctrl_tun_friction_comp_path = hand_finder.get_hand_control_tuning().friction_compensation['right']
+        self.assertEqual(ctrl_tun_friction_comp_path, self.ethercat_path + "/controls/friction_compensation.yaml","incorrect friction compensation file")
+        
+        ctrl_tun_motors_path = hand_finder.get_hand_control_tuning().motor_control['right']
+        self.assertEqual(ctrl_tun_motors_path, self.ethercat_path + "/controls/motors/right/motor_board_effort_controllers.yaml","incorrect motor config file")
+        
+        ctrl_tun_host_control_paths = hand_finder.get_hand_control_tuning().host_control['right']
+        
+        self.assertEqual(len(ctrl_tun_host_control_paths), len(controller_params), "incorrect number of host controllers param")
+        for controller_path, controller_param in zip(ctrl_tun_host_control_paths, controller_params):
+            self.assertEqual(controller_path, self.ethercat_path +"/controls/host/right/"+ controller_param,"incorrect controller config file")
+
+        
+    
+    def test_one_hand_finder_no_ns(self):
+        rospy.set_param("hand/joint_prefix/1", "rh_")
+        rospy.set_param("hand/mapping/1", "")
+
+        hand_finder = HandFinder()
+        self.assertIsNotNone(hand_finder.get_hand_parameters(),
+                             "Parameters extracted.")
+        self.assertIsNotNone(hand_finder.get_hand_joints(),
+                             "Joints extracted.")
+        joints = hand_finder.get_hand_joints()['1']
+        self.assertEqual(len(joints), 24, "incorrect number of joints")
+        self.assertEqual(joints[0], ("rh_" + joint_names[0]),"incorrect joint_name")
+        self.assertIsNotNone(hand_finder.get_calibration_path(),
+                             "Calibration extracted.")
+        calibration_path = hand_finder.get_calibration_path()['1']
+        self.assertEqual(calibration_path, self.ethercat_path + "/calibrations/1/" + "calibration.yaml","incorrect calibration file")
+        self.assertIsNotNone(hand_finder.get_hand_control_tuning(),
+                             "Control tuning parameters extracted.")
+        ctrl_tun_friction_comp_path = hand_finder.get_hand_control_tuning().friction_compensation['1']
+        self.assertEqual(ctrl_tun_friction_comp_path, self.ethercat_path + "/controls/friction_compensation.yaml","incorrect friction compensation file")
+        
+        ctrl_tun_motors_path = hand_finder.get_hand_control_tuning().motor_control['1']
+        self.assertEqual(ctrl_tun_motors_path, self.ethercat_path + "/controls/motors/1/motor_board_effort_controllers.yaml","incorrect motor config file")
+        
+        ctrl_tun_host_control_paths = hand_finder.get_hand_control_tuning().host_control['1']
+        
+        self.assertEqual(len(ctrl_tun_host_control_paths), len(controller_params), "incorrect number of host controllers param")
+        for controller_path, controller_param in zip(ctrl_tun_host_control_paths, controller_params):
+            self.assertEqual(controller_path, self.ethercat_path +"/controls/host/1/"+ controller_param,"incorrect controller config file")
+            
+
+    def test_one_hand_finder_no_prefix(self):
+        rospy.set_param("hand/joint_prefix/1", "")
         rospy.set_param("hand/mapping/1", "rh")
 
         hand_finder = HandFinder()
@@ -40,26 +118,109 @@ class TestHandFinder(unittest.TestCase):
                              "Parameters extracted.")
         self.assertIsNotNone(hand_finder.get_hand_joints(),
                              "Joints extracted.")
+        joints = hand_finder.get_hand_joints()['rh']
+        self.assertEqual(len(joints), 24, "incorrect number of joints")
+        self.assertEqual(joints[0], joint_names[0],"incorrect joint_name")
         self.assertIsNotNone(hand_finder.get_calibration_path(),
                              "Calibration extracted.")
+        calibration_path = hand_finder.get_calibration_path()['rh']
+        self.assertEqual(calibration_path, self.ethercat_path + "/calibrations/rh/" + "calibration.yaml","incorrect calibration file")
         self.assertIsNotNone(hand_finder.get_hand_control_tuning(),
                              "Control tuning parameters extracted.")
+        ctrl_tun_friction_comp_path = hand_finder.get_hand_control_tuning().friction_compensation['rh']
+        self.assertEqual(ctrl_tun_friction_comp_path, self.ethercat_path + "/controls/friction_compensation.yaml","incorrect friction compensation file")
+        
+        ctrl_tun_motors_path = hand_finder.get_hand_control_tuning().motor_control['rh']
+        self.assertEqual(ctrl_tun_motors_path, self.ethercat_path + "/controls/motors/rh/motor_board_effort_controllers.yaml","incorrect motor config file")
+        
+        ctrl_tun_host_control_paths = hand_finder.get_hand_control_tuning().host_control['rh']
+        
+        self.assertEqual(len(ctrl_tun_host_control_paths), len(controller_params), "incorrect number of host controllers param")
+        for controller_path, controller_param in zip(ctrl_tun_host_control_paths, controller_params):
+            self.assertEqual(controller_path, self.ethercat_path +"/controls/host/rh/"+ controller_param,"incorrect controller config file")
+            
+        
+ 
+    def test_one_hand_finder_no_prefix_no_ns(self):
+            
+        rospy.set_param("hand/joint_prefix/1", "")
+        rospy.set_param("hand/mapping/1", "")
+
+        hand_finder = HandFinder()
+        self.assertIsNotNone(hand_finder.get_hand_parameters(),
+                             "Parameters extracted.")
+        self.assertIsNotNone(hand_finder.get_hand_joints(),
+                             "Joints extracted.")
+        joints = hand_finder.get_hand_joints()['1']
+        self.assertEqual(len(joints), 24, "incorrect number of joints")
+        self.assertEqual(joints[0], joint_names[0],"incorrect joint_name")
+        self.assertIsNotNone(hand_finder.get_calibration_path(),
+                             "Calibration extracted.")
+        calibration_path = hand_finder.get_calibration_path()['1']
+        self.assertEqual(calibration_path, self.ethercat_path + "/calibrations/1/" + "calibration.yaml","incorrect calibration file")
+        self.assertIsNotNone(hand_finder.get_hand_control_tuning(),
+                             "Control tuning parameters extracted.")
+        ctrl_tun_friction_comp_path = hand_finder.get_hand_control_tuning().friction_compensation['1']
+        self.assertEqual(ctrl_tun_friction_comp_path, self.ethercat_path + "/controls/friction_compensation.yaml","incorrect friction compensation file")
+        
+        ctrl_tun_motors_path = hand_finder.get_hand_control_tuning().motor_control['1']
+        self.assertEqual(ctrl_tun_motors_path, self.ethercat_path + "/controls/motors/1/motor_board_effort_controllers.yaml","incorrect motor config file")
+        
+        ctrl_tun_host_control_paths = hand_finder.get_hand_control_tuning().host_control['1']
+        
+        self.assertEqual(len(ctrl_tun_host_control_paths), len(controller_params), "incorrect number of host controllers param")
+        for controller_path, controller_param in zip(ctrl_tun_host_control_paths, controller_params):
+            self.assertEqual(controller_path, self.ethercat_path +"/controls/host/1/"+ controller_param,"incorrect controller config file")
+
 
     def test_two_hand_finder(self):
         rospy.set_param("hand/joint_prefix/1", "rh_")
-        rospy.set_param("hand/mapping/1", "rh")
+        rospy.set_param("hand/mapping/1", "right")
         rospy.set_param("hand/joint_prefix/2", "lh_")
-        rospy.set_param("hand/mapping/2", "lh")
+        rospy.set_param("hand/mapping/2", "left")
 
         hand_finder = HandFinder()
         self.assertIsNotNone(hand_finder.get_hand_parameters(),
                              "Parameters extracted.")
         self.assertIsNotNone(hand_finder.get_hand_joints(),
                              "Joints extracted.")
+        joints = hand_finder.get_hand_joints()['right']
+        self.assertEqual(len(joints), 24, "incorrect number of joints")
+        self.assertEqual(joints[0], ("rh_" + joint_names[0]),"incorrect joint_name")
+        joints = hand_finder.get_hand_joints()['left']
+        self.assertEqual(len(joints), 24, "incorrect number of joints")
+        self.assertEqual(joints[0], ("lh_" + joint_names[0]),"incorrect joint_name")
         self.assertIsNotNone(hand_finder.get_calibration_path(),
                              "Calibration extracted.")
-        self.assertIsNotNone(hand_finder.get_hand_control_tuning(),
-                             "Control tuning parameters extracted.")
+        calibration_path = hand_finder.get_calibration_path()['right']
+        self.assertEqual(calibration_path, self.ethercat_path + "/calibrations/right/" + "calibration.yaml","incorrect calibration file")
+        calibration_path = hand_finder.get_calibration_path()['left']
+        self.assertEqual(calibration_path, self.ethercat_path + "/calibrations/left/" + "calibration.yaml","incorrect calibration file")
+        
+        ctrl_tun_friction_comp_path = hand_finder.get_hand_control_tuning().friction_compensation['right']
+        self.assertEqual(ctrl_tun_friction_comp_path, self.ethercat_path + "/controls/friction_compensation.yaml","incorrect friction compensation file")
+        
+        ctrl_tun_motors_path = hand_finder.get_hand_control_tuning().motor_control['right']
+        self.assertEqual(ctrl_tun_motors_path, self.ethercat_path + "/controls/motors/right/motor_board_effort_controllers.yaml","incorrect motor config file")
+        
+        ctrl_tun_host_control_paths = hand_finder.get_hand_control_tuning().host_control['right']
+        
+        self.assertEqual(len(ctrl_tun_host_control_paths), len(controller_params), "incorrect number of host controllers param")
+        for controller_path, controller_param in zip(ctrl_tun_host_control_paths, controller_params):
+            self.assertEqual(controller_path, self.ethercat_path +"/controls/host/right/"+ controller_param,"incorrect controller config file")
+        
+        ctrl_tun_friction_comp_path = hand_finder.get_hand_control_tuning().friction_compensation['left']
+        self.assertEqual(ctrl_tun_friction_comp_path, self.ethercat_path + "/controls/friction_compensation.yaml","incorrect friction compensation file")
+        
+        ctrl_tun_motors_path = hand_finder.get_hand_control_tuning().motor_control['left']
+        self.assertEqual(ctrl_tun_motors_path, self.ethercat_path + "/controls/motors/left/motor_board_effort_controllers.yaml","incorrect motor config file")
+        
+        ctrl_tun_host_control_paths = hand_finder.get_hand_control_tuning().host_control['left']
+        
+        self.assertEqual(len(ctrl_tun_host_control_paths), len(controller_params), "incorrect number of host controllers param")
+        for controller_path, controller_param in zip(ctrl_tun_host_control_paths, controller_params):
+            self.assertEqual(controller_path, self.ethercat_path +"/controls/host/left/"+ controller_param,"incorrect controller config file")
+
 
 
 if __name__ == "__main__":
