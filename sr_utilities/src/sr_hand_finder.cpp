@@ -46,6 +46,8 @@ namespace shadow_robot
     for (map<string, string>::const_iterator iter = hand_config_.mapping_.begin();
          iter != hand_config_.mapping_.end(); ++iter)
     {
+      if ( iter->second.size() == 0 )
+          hand_config_.mapping_[iter->first] = iter->first;
       ROS_INFO_STREAM("detected hands are \n" << "hand serial:" << iter->first << " hand_id:" << iter->second);
     }
     generate_joints_with_prefix();
