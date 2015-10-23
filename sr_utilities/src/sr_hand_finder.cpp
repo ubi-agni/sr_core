@@ -40,8 +40,8 @@ namespace shadow_robot
   SrHandFinder::SrHandFinder()
   {
     map<string, string> mapping_map;
-    ros::param::get("hand/mapping", hand_config_.mapping_);
-    ros::param::get("hand/joint_prefix", hand_config_.joint_prefix_);
+    ros::param::get("/hand/mapping", hand_config_.mapping_);
+    ros::param::get("/hand/joint_prefix", hand_config_.joint_prefix_);
 
     for (map<string, string>::const_iterator iter = hand_config_.mapping_.begin();
          iter != hand_config_.mapping_.end(); ++iter)
