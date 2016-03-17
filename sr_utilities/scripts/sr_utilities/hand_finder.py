@@ -83,17 +83,22 @@ class HandConfig(object):
 
 
 class HandJoints(object):
+
+    @classmethod
+    def get_default_joints(cls):
+        joints = ['FFJ1', 'FFJ2', 'FFJ3', 'FFJ4', 'MFJ1', 'MFJ2', 'MFJ3',
+                  'MFJ4', 'RFJ1', 'RFJ2', 'RFJ3', 'RFJ4', 'LFJ1', 'LFJ2',
+                  'LFJ3', 'LFJ4', 'LFJ5', 'THJ1', 'THJ2', 'THJ3', 'THJ4',
+                  'THJ5', 'WRJ1', 'WRJ2']
+        return joints
+
     def __init__(self, mapping, joint_prefix):
         """
 
         """
         self.joints = {}
         hand_joints = []
-
-        joints = ['FFJ1', 'FFJ2', 'FFJ3', 'FFJ4', 'MFJ1', 'MFJ2', 'MFJ3',
-                  'MFJ4', 'RFJ1', 'RFJ2', 'RFJ3', 'RFJ4', 'LFJ1', 'LFJ2',
-                  'LFJ3', 'LFJ4', 'LFJ5', 'THJ1', 'THJ2', 'THJ3', 'THJ4',
-                  'THJ5', 'WRJ1', 'WRJ2']
+        joints = self.get_default_joints()
 
         if rospy.has_param('robot_description'):
             robot_description = rospy.get_param('robot_description')
@@ -115,9 +120,12 @@ class HandJoints(object):
                 for joint in hand_urdf.joints:
                     if joint.type != 'fixed':
                         prefix = joint.name[:3]
-                        if prefix not in joint_prefix.values():
-                            rospy.logdebug("joint " + joint.name + "has invalid "
-                                           "prefix")
+                        # is there an empty prefix ?
+                        if "" in joint_prefix.values():
+                            joints_tmp.append(joint.name)
+                        elif prefix not in joint_prefix.values():
+                            rospy.logdebug("joint " + joint.name + " has invalid "
+                                           "prefix:" + prefix)
                         elif prefix == joint_prefix[hand]:
                             joints_tmp.append(joint.name)
                 for joint_unordered in hand_joints:

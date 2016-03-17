@@ -2,7 +2,13 @@
     local-name: gazebo_ros_pkgs
     uri: https://github.com/ros-simulation/gazebo_ros_pkgs.git
     version: indigo-devel
+
 - git:
     local-name: sr_common
     uri: https://github.com/shadow-robot/sr_common
+    version: indigo-devel
+
+- git:
+    local-name: ros_ethercat
+    uri: https://github.com/shadow-robot/ros_ethercat
     version: indigo-devel

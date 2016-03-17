@@ -29,7 +29,7 @@
 
 #include "ros/node_handle.h"
 #include <string>
-#include "ros_ethercat_model/robot_state.hpp"
+#include "ros_ethercat_model/robot_state_interface.hpp"
 #include "velocity_controllers/joint_velocity_controller.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "std_msgs/Empty.h"
@@ -40,52 +40,52 @@
 namespace controller
 {
 
-  class SrhFakeJointCalibrationController :
-          public controller_interface::Controller<ros_ethercat_model::RobotState>
+class SrhFakeJointCalibrationController :
+        public controller_interface::Controller<ros_ethercat_model::RobotStateInterface>
+{
+public:
+  SrhFakeJointCalibrationController();
+
+  virtual bool init(ros_ethercat_model::RobotStateInterface *robot, ros::NodeHandle &n);
+
+  virtual void update(const ros::Time &time, const ros::Duration &period);
+
+  bool calibrated()
   {
-  public:
-    SrhFakeJointCalibrationController();
+    return calibration_state_ == CALIBRATED;
+  }
 
-    virtual bool init(ros_ethercat_model::RobotState *robot, ros::NodeHandle &n);
-
-    virtual void update(const ros::Time &time, const ros::Duration &period);
-
-    bool calibrated()
+  void beginCalibration()
+  {
+    if (calibration_state_ == IS_INITIALIZED)
     {
-      return calibration_state_ == CALIBRATED;
+      calibration_state_ = BEGINNING;
     }
+  }
 
-    void beginCalibration()
-    {
-      if (calibration_state_ == IS_INITIALIZED)
-      {
-        calibration_state_ = BEGINNING;
-      }
-    }
+protected:
+  ros_ethercat_model::RobotState *robot_;
+  ros::NodeHandle node_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
+  ros::Time last_publish_time_;
 
-  protected:
-    ros_ethercat_model::RobotState *robot_;
-    ros::NodeHandle node_;
-    boost::scoped_ptr<realtime_tools::RealtimePublisher<std_msgs::Empty> > pub_calibrated_;
-    ros::Time last_publish_time_;
-
-    enum
-    {
-      IS_INITIALIZED, BEGINNING, MOVING_TO_LOW, MOVING_TO_HIGH, CALIBRATED
-    };
-    int calibration_state_;
-
-    ros_ethercat_model::Actuator *actuator_;
-    ros_ethercat_model::JointState *joint_;
-
-    std::string joint_name_, actuator_name_, robot_id_, joint_prefix_, ns_;
-
-    /**
-     * Read the pids values from the parameter server and calls the service
-     * to set them on the hand.
-     */
-    void initialize_pids();
+  enum
+  {
+    IS_INITIALIZED, BEGINNING, MOVING_TO_LOW, MOVING_TO_HIGH, CALIBRATED
   };
+  int calibration_state_;
+
+  ros_ethercat_model::Actuator *actuator_;
+  ros_ethercat_model::JointState *joint_;
+
+  std::string joint_name_, actuator_name_, robot_id_, joint_prefix_, ns_;
+
+  /**
+   * Read the pids values from the parameter server and calls the service
+   * to set them on the hand.
+   */
+  void initialize_pids();
+};
 }  // namespace controller
 
 /* For the emacs weenies in the crowd.

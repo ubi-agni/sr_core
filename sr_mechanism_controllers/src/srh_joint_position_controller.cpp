@@ -27,6 +27,7 @@
 #include "sr_mechanism_controllers/srh_joint_position_controller.hpp"
 #include "angles/angles.h"
 #include "pluginlib/class_list_macros.h"
+#include <string>
 #include <sstream>
 #include <algorithm>
 #include <math.h>
@@ -47,10 +48,24 @@ namespace controller
   {
   }
 
-  bool SrhJointPositionController::init(ros_ethercat_model::RobotState *robot, ros::NodeHandle &n)
+  bool SrhJointPositionController::init(ros_ethercat_model::RobotStateInterface *robot, ros::NodeHandle &n)
   {
     ROS_ASSERT(robot);
-    robot_ = robot;
+
+    std::string robot_state_name;
+    node_.param<std::string>("robot_state_name", robot_state_name, "unique_robot_hw");
+
+    try
+    {
+      robot_ = robot->getHandle(robot_state_name).getState();
+    }
+    catch(const hardware_interface::HardwareInterfaceException& e)
+    {
+      ROS_ERROR_STREAM("Could not find robot state: " << robot_state_name << " Not loading the controller. " <<
+        e.what());
+      return false;
+    }
+
     node_ = n;
 
     if (!node_.getParam("joint", joint_name_))

@@ -29,50 +29,51 @@
 namespace shadow_robot
 {
 
-  struct HandConfig
+struct HandConfig
+{
+  std::map<std::string, std::string> mapping_;
+  std::map<std::string, std::string> joint_prefix_;
+};
+
+struct HandControllerTuning
+{
+  std::map<std::string, std::string> friction_compensation_;
+  std::map<std::string, std::vector<std::string> > host_control_;
+  std::map<std::string, std::string> motor_control_;
+};
+
+class SrHandFinder
+{
+public:
+  static const std::vector<std::string> get_default_joints();
+
+  std::map<std::string, std::vector<std::string> > get_joints();
+
+  HandConfig get_hand_parameters();
+
+  std::map<std::string, std::string> get_calibration_path();
+
+  HandControllerTuning get_hand_controller_tuning();
+
+  SrHandFinder();
+
+  virtual ~SrHandFinder()
   {
-    std::map<std::string, std::string> mapping_;
-    std::map<std::string, std::string> joint_prefix_;
-  };
+  }
 
-  struct HandControllerTuning
-  {
-    std::map<std::string, std::string> friction_compensation_;
-    std::map<std::string, std::vector<std::string> > host_control_;
-    std::map<std::string, std::string> motor_control_;
-  };
+private:
+  static const std::vector<std::string> joint_names_;
+  ros::NodeHandle node_handle_;
+  HandConfig hand_config_;
+  HandControllerTuning hand_controller_tuning_;
+  std::map<std::string, std::vector<std::string> > joints_;
+  std::map<std::string, std::string> calibration_path_;
 
-  class SrHandFinder
-  {
-  public:
-    std::map<std::string, std::vector<std::string> > get_joints();
+  void generate_joints_with_prefix();
 
-    std::map<std::string, std::string> get_calibration_path();
+  void generate_calibration_path();
 
-    HandControllerTuning get_hand_controller_tuning();
-
-  private:
-    static const size_t number_of_joints_;
-    static const char *joint_names_[];
-    ros::NodeHandle node_handle_;
-    HandConfig hand_config_;
-    HandControllerTuning hand_controller_tuning_;
-    std::map<std::string, std::vector<std::string> > joints_;
-    std::map<std::string, std::string> calibration_path_;
-
-    void generate_joints_with_prefix();
-
-    void generate_calibration_path();
-
-    void generate_hand_controller_tuning_path();
-
-
-  public:
-    SrHandFinder();
-
-    virtual ~SrHandFinder()
-    {
-    }
-  };
+  void generate_hand_controller_tuning_path();
+};
 
 } /* namespace shadow_robot */
