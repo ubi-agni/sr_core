@@ -28,10 +28,11 @@
 #ifndef _THREAD_SAFE_MAP_HPP_
 #define _THREAD_SAFE_MAP_HPP_
 
-#include <boost/smart_ptr.hpp>
-#include <boost/thread.hpp>
+#include <mutex>
+#include <chrono>
 
 #include <map>
+#include <memory>
 #include <vector>
 #include <iostream>
 #include <utility>
@@ -45,8 +46,8 @@ namespace threadsafe
   public:
     Map()
     {
-      mutex_ = boost::shared_ptr<boost::shared_mutex>(new boost::shared_mutex());
-      map_ = boost::shared_ptr<InternalMap>(new InternalMap());
+      mutex_ = std::shared_ptr<std::timed_mutex>(new std::timed_mutex());
+      map_ = std::shared_ptr<InternalMap>(new InternalMap());
     };
 
     ~Map()
@@ -55,21 +56,24 @@ namespace threadsafe
 
     T find(std::string first)
     {
-      boost::shared_lock<boost::shared_mutex> lock(*(mutex_.get()));
+      std::unique_lock<std::timed_mutex> l(*mutex_);
       typename InternalMap::iterator it = map_->find(first);
       if (it != map_->end())
+      {
         return it->second;
+      }
       else
+      {
         return T();
+      }
     }
 
     bool insert(const std::string &first, const T &value)
     {
-      if (!mutex_->timed_lock(boost::posix_time::microseconds(lock_wait_time)))
+      if (!mutex_->try_lock_for(std::chrono::microseconds(lock_wait_time)))
       {
         return false;
       }
-
       keys_.push_back(first);
       map_->insert(std::pair<std::string, T>(first, value));
       mutex_->unlock();
@@ -78,7 +82,7 @@ namespace threadsafe
 
     bool update(const std::string &first, const T &value)
     {
-      if (!mutex_->timed_lock(boost::posix_time::microseconds(lock_wait_time)))
+      if (!mutex_->try_lock_for(std::chrono::microseconds(lock_wait_time)))
       {
         return false;
       }
@@ -98,9 +102,9 @@ namespace threadsafe
 
     typedef std::map<std::string, T> InternalMap;
 
-    boost::shared_ptr<InternalMap> map_;
+    std::shared_ptr<InternalMap> map_;
 
-    boost::shared_ptr<boost::shared_mutex> mutex_;
+    std::shared_ptr<std::timed_mutex> mutex_;
     std::vector<std::string> keys_;
   };
 }  // namespace threadsafe

@@ -8,6 +8,8 @@ catkin_python_setup()
 
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
+add_definitions(-std=c++11)
+
 add_service_files(FILES getJointState.srv)
 generate_messages(DEPENDENCIES std_msgs sensor_msgs)
 
@@ -28,9 +30,9 @@ catkin_add_gtest(test_calibration test/test_calibration.cpp src/calibration.cpp)
 target_link_libraries(test_calibration ${catkin_LIBRARIES})
 add_dependencies(test_calibration sr_utilities_gencpp ${catkin_EXPORTED_TARGETS})
 
-catkin_add_gtest(test_thread_safe_map test/test_thread_safe_map.cpp)
+catkin_add_gtest(test_thread_safe_map test/test_thread_safe_map.cpp include/sr_utilities/thread_safe_map.hpp)
 add_dependencies(test_thread_safe_map sr_utilities_gencpp ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_thread_safe_map ${catkin_LIBRARIES} pthread)
+target_link_libraries(test_thread_safe_map ${catkin_LIBRARIES} pthread )
 
 catkin_add_gtest(test_math_utils test/test_math_utils.cpp)
 add_dependencies(test_math_utils sr_utilities_gencpp ${catkin_EXPORTED_TARGETS})
