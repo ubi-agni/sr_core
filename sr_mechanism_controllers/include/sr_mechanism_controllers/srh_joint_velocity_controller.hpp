@@ -75,6 +75,9 @@ private:
   void setCommandCB(const std_msgs::Float64ConstPtr &msg);
 
   void resetJointState();
+
+  /// service client to motor control setting change
+  ros::ServiceClient motor_ctrl_client_;
 };
 }  // namespace controller
 

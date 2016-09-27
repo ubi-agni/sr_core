@@ -128,6 +128,9 @@ namespace controller
 
     friction_compensator.reset(new sr_friction_compensation::SrFrictionCompensator(joint_name_));
 
+    motor_ctrl_client_ = node_.serviceClient<sr_robot_msgs::ChangeMotorSystemControls>("change_motor_system_controls");
+
+
     // get the min and max value for the current joint:
     get_min_max(robot_->robot_model_, joint_name_);
 
@@ -143,13 +146,33 @@ namespace controller
     resetJointState();
     pid_controller_velocity_->reset();
     read_parameters();
-
+    // adjust low-level controller settings if available
+    if (motor_ctrl_client_)
+    {
+      motor_ctrl_client_
+    }
     if (has_j2)
       ROS_WARN_STREAM(
               "Reseting PID for joints " << joint_state_->joint_->name << " and " << joint_state_2->joint_->name);
     else
       ROS_WARN_STREAM("Reseting PID for joint  " << joint_state_->joint_->name);
   }
+
+  bool SrhJointVelocityController::setBacklashCompensation(bool enable_bc)
+  {
+    sr_robot_msgs::ChangeMotorSystemControls::Request backlash_request;
+    sr_robot_msgs::MotorSystemControls motor_sys_ctrl;
+    motor_sys_ctrl.motor_id = motor_index; // FIND THIS ONE
+    motor_sys_ctrl.enable_backlash_compensation = enable_bc;
+
+    if (!enable_bc)
+      ROS_DEBUG_STREAM("Setting backlash compensation to OFF for joint " << joint_state_->joint_->name);
+
+    backlash_request.motor_system_controls.push_back(motor_sys_ctrl);
+    sr_robot_msgs::ChangeMotorSystemControls::Response backlash_response;
+    return motor_ctrl_client_.call(backlash_request, backlash_response);
+  }
+
 
   bool SrhJointVelocityController::setGains(sr_robot_msgs::SetPidGains::Request &req,
                                             sr_robot_msgs::SetPidGains::Response &resp)
