@@ -23,7 +23,6 @@
     <build_depend>tf</build_depend>
     <build_depend>urdfdom_py</build_depend>
     <build_depend>urdf</build_depend>
-    <build_depend>ros_ethercat_model</build_depend>
 
     <!-- Dependencies needed after this package is compiled. -->
     <run_depend>sensor_msgs</run_depend>
