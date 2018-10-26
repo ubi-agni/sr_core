@@ -1,7 +1,7 @@
 <launch>
   <!-- We reuse the logic in empty_world.launch, changing only the name of the world to be launched -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find sr_description_common)/worlds/shadowhand.world"/>
+    <arg name="world_name" value="$(find agni_description)/models/shadowhand.world"/>
   </include>
   <!-- spawn the support model -->
   <include file="$(find sr_description)/loaders/load_support_model.launch" />
