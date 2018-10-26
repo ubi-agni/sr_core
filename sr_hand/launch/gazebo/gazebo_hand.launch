@@ -12,7 +12,7 @@
   <param name="/hand/joint_prefix/$(arg hand_serial)" value="$(arg hand_id)_"/>
 
   <!-- Gazebo world file to load. -->
-  <arg name="world_name" value="$(find sr_description_common)/worlds/shadowhand.world"/>
+  <arg name="world_name" value="$(find agni_description)/models/shadowhand.world"/>
   <!-- Set to 0 if the hand description will not be specified with the argument hand_description. In which case it depends on the environment variables -->
   <arg name="set_hand_description" default="0" />
   <!-- Xacro file containing the robot description we want to load. Only taken into acount if the set_description arg is set to 1
