@@ -25,7 +25,7 @@ if (DEFINED debug)
 else(DEFINED debug)
     message(STATUS " [ ] Debug publisher")
 endif (DEFINED debug)
-
+set (CMAKE_CXX_STANDARD 11)
 add_executable(joint_trajectory_action_controller src/joint_trajectory_action_controller.cpp)
 add_dependencies(joint_trajectory_action_controller ${catkin_EXPORTED_TARGETS})
 target_link_libraries(joint_trajectory_action_controller ${catkin_LIBRARIES})

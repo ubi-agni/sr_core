@@ -18,6 +18,7 @@ catkin_package(
         LIBRARIES sr_calibration
 )
 
+set (CMAKE_CXX_STANDARD 11)
 add_library(sr_calibration src/calibration.cpp)
 add_dependencies(sr_calibration sr_utilities_gencpp ${catkin_EXPORTED_TARGETS})
 add_library(sr_hand_finder src/sr_hand_finder.cpp)

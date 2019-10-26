@@ -8,7 +8,7 @@ find_package(gazebo REQUIRED)
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${TinyXML2_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFormat_INCLUDE_DIRS})
 
 add_compile_options(${GAZEBO_CXX_FLAGS})
-
+set (CMAKE_CXX_STANDARD 11)
 catkin_package(
         DEPENDS tinyxml2
         CATKIN_DEPENDS roscpp sr_hardware_interface ros_ethercat_model gazebo_ros_control

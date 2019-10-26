@@ -16,6 +16,7 @@ catkin_package(
         LIBRARIES HandCommander SrVirtual
 )
 
+set (CMAKE_CXX_STANDARD 11)
 ###################
 #  CONFIGURATION  #
 ###################
