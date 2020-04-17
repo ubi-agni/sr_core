@@ -223,7 +223,9 @@ namespace controller
       error_position = joint_state_->position_ - command_;
     }
 
-    bool in_deadband = hysteresis_deadband.is_in_deadband(command_, error_position, position_deadband);
+    bool in_deadband = false;
+    if (position_deadband >= 0.0)
+      in_deadband = hysteresis_deadband.is_in_deadband(command_, error_position, position_deadband);
 
     // don't compute the error if we're in the deadband.
     if (in_deadband)
@@ -239,20 +241,24 @@ namespace controller
 
     if (!in_deadband)
     {
-      if (has_j2)
+      if (friction_deadband >= 0.0)
       {
-        commanded_effort += friction_compensator->friction_compensation(
-                joint_state_->position_ + joint_state_2->position_,
-                joint_state_->velocity_ + joint_state_2->velocity_,
-                static_cast<int>(commanded_effort),
-                friction_deadband);
-      }
-      else
-      {
-        commanded_effort += friction_compensator->friction_compensation(joint_state_->position_,
-                                                                        joint_state_->velocity_,
-                                                                        static_cast<int>(commanded_effort),
-                                                                        friction_deadband);
+        if (has_j2)
+        {
+         
+          commanded_effort += friction_compensator->friction_compensation(
+                  joint_state_->position_ + joint_state_2->position_,
+                  joint_state_->velocity_ + joint_state_2->velocity_,
+                  static_cast<int>(commanded_effort),
+                  friction_deadband);
+        }
+        else
+        {
+          commanded_effort += friction_compensator->friction_compensation(joint_state_->position_,
+                                                                          joint_state_->velocity_,
+                                                                          static_cast<int>(commanded_effort),
+                                                                          friction_deadband);
+        }
       }
     }
 
